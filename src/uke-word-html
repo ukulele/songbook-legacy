@@ -1,0 +1,91 @@
+#!/bin/bash
+
+# Script to complete conversion of Word html output to individual, tidy html songs 
+# NB Requires Word document set up with only standard Normal, Heading 1 to 6 styles, along with a new Chords style for 'above-line' chordsi
+#
+#
+# 0 - SET UP VARIABLES
+# ====================
+#
+infile="$PWD/$1"
+echo "*** Processing $infile"
+cd ..
+outdir="$PWD/2-html"
+# Check and create output directory
+if [ ! -d "$outdir" ]; then mkdir "$outdir"; fi
+echo "*** Destination $outdir"
+workfile="$outdir/$1.tmp"
+echo "*** Working file $workfile"
+dumpdir="above-line-chords"
+if [ ! -d "$outdir/$dumpdir" ]; then mkdir "$outdir/$dumpdir"; fi
+echo "*** Nasty above-line chords in $dumpdir"
+# Initialise songlist
+if [ -f "$outdir/songlist.html" ]; then rm "$outdir/songlist.html"; fi
+#
+#
+# 1 - CLEAN UP HTML FROM WORD
+# ===========================
+#
+# Word's filtered HTML is still none too clean, so scrub it well		
+# Convert line endings from DOS CRLF to Unix LF
+tr -d '\r' < "$infile" > "$workfile"
+# Clean up crappy space characters (dec 160, hex 
+sed -i -e 's/\d160/ /g' "$workfile"
+# Remove double spacing empty lines (using Unix newline)
+sed -i -e '/^$/d' "$workfile"				
+# Tidy <p> tags
+sed -i -e 's/<p class=MsoNormal>/<p>/g' "$workfile"
+#
+#
+# 2 - SPLIT INTO INDIVIDUAL SONG FILES
+# ====================================
+#
+#Split files at <h1> and output to output folder
+cd "$outdir"
+csplit --prefix="song" "$workfile" /\<h1\>/ {*}
+#
+#
+# 3 - GO THROUGH SONG FILES TO RENAME ACCORDING TO TITLE
+# ======================================================
+#
+# Open each song file in turn, examine <h1>Title</h1> and resave lower case and _ title.html
+find . -type f -name "song*" | while read songfile
+do
+# Find text tagged as <h1>
+	title=$(grep -e '<h1>.*</h1>' "$songfile")
+# Trim the tags off incl EOL	
+	fulltitle=${title:4:-5}
+# Make it lowercase	
+	title=${fulltitle,,}
+# Spaces to _
+	title=${title//[ ?\'\.]/_}
+# Remove html special characters
+	title=${title//&[a-z]*;/}
+# Check if it contains above-line chords
+	if [[ $(grep "<p class=Chords>" "$songfile") ]]
+		then
+			title="$dumpdir/$title"
+			fulltitle="$fulltitle (ABOVE-LINE)"
+	fi
+# Rename to title.html
+	mv "$songfile" "$title.html"
+	echo -e "$title.html"
+	echo -e "<p><a href='$title.html'>$fulltitle</a></p>" >> "0-songlist.html"
+#
+# TODO
+# Use title parsing to write label to file after title, ready for latex
+# Bugger that, just pick it up from the filename in later processing
+#
+done
+#
+#
+# HOUSEKEEPING
+#
+#Cleanup
+rm "$workfile"
+#
+# breakdown of chord usage (summarise with pivot table)
+echo "Song;Chord" > "0-chordlist.csv"
+grep -o -e '\[[a-zA-Z0-7]*\]' * | sed -e 's/.html:/;/g' | sort >> "$outdir/0-chordlist.csv"
+#
+

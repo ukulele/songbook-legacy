@@ -1,0 +1,34 @@
+#!/bin/bash
+infile=$1
+#
+# Initialise
+
+#
+# Read file into array - cat seems to split at spaces
+# song=( $(cat "$infile") )
+# try mapfile (aka readarray)
+mapfile song < "$infile"
+echo "Length is ${#song[*]}"
+# Go through the song looking for chord paras
+let i=0
+let lines=${#song[*]}
+while [ "$i" -lt ${#song[*]} ]
+	do
+	if [[ "${song[i]}" == "<p class=Chords>"* ]]
+		then
+# Strip class id from html in chordline
+		chordline="${song[i]/ class=Chords/}"
+#	Identify lyrics line as next line NB NEED CHECKING FOR BLANK LINE		
+		lyricline="${song[i+1]}"
+		echo -e " Chords: $chordline Lyrics: $lyricline"
+# Find chord in chordline by contiguous non-space chracters and return start position
+#		foundchord=$(echo "$chordline" | grep -b -o '[ABCDEFG]\w*')
+		foundchord=$(expr match "$chordline" '<p> *\([A-Gn]\w\)')
+		foundposn=$(expr index "$chordline" $foundchord)
+		echo "Found $foundchord at $foundposn"
+#		find nearest spaces in lyric line
+		putposn1=i
+# NEXT - HOW TO GET THE FIRST OF THESE FIND RESULTS AND PARSE FOR POSITION AND CHORD
+		fi
+	let "i++"
+done
