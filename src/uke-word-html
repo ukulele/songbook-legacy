@@ -20,7 +20,7 @@ dumpdir="above-line-chords"
 if [ ! -d "$outdir/$dumpdir" ]; then mkdir "$outdir/$dumpdir"; fi
 echo "*** Nasty above-line chords in $dumpdir"
 # Initialise songlist
-if [ -f "$outdir/songlist.html" ]; then rm "$outdir/songlist.html"; fi
+if [ -f "$outdir/songlist.htm" ]; then rm "$outdir/songlist.htm"; fi
 #
 #
 # 1 - CLEAN UP HTML FROM WORD
@@ -70,7 +70,7 @@ do
 # Rename to title.html
 	mv "$songfile" "$title.html"
 	echo -e "$title.html"
-	echo -e "<p><a href='$title.html'>$fulltitle</a></p>" >> "0-songlist.html"
+	echo -e "<p><a href='$title.html'>$fulltitle</a></p>" >> "0-songlist.htm"
 #
 # TODO
 # Use title parsing to write label to file after title, ready for latex

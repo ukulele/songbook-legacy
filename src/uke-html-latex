@@ -1,0 +1,39 @@
+#!/bin/bash
+#
+#
+listfile="../3-latex/0-songlist.tex"
+echo "% include lines" > $listfile
+find -type f -maxdepth 1 -name "*.html" | while read songfile
+	do
+	songlabel=${songfile#./}
+	songlabel=${songlabel%.html}
+	outfile="../3-latex/$songlabel.tex"
+	echo -e "Processing $songfile as $songlabel into $outfile"
+#	Convert <h1> and <h2> markeup to title / author structure
+# Using double quotes to expand variable
+# Convert chord markup to Latex \upchord{}
+#	Trim paragph markup
+# &nbsp; spacing between verses	to \\
+#	<h3> to {small   }
+#	
+	sed -e 's/<h1>/\\section{/g' \
+	-e 'N;s/<\/h1>\n<h2>/ \/ /g' \
+	-e "s/<\/h2>/}\\\label{sec:$songlabel}/g" \
+	-e 's/\[/\\upchord{/g' \
+	-e 's/\] /}/g' \
+	-e 's/<p>//g' \
+	-e 's/<\/p>//g' \
+	-e 's/&nbsp;/\\\\/g' \
+	-e 's/<h3>/\\textbf{/g' \
+	-e 's/<\/h3>/}/g' \
+	-e 's/<h4>/\\textbf{/g' \
+	-e 's/<\/h4>/}/g' \
+	-e 's/<h5>/{\\small /g' \
+	-e 's/<\/h5>/}/g' \
+	-e 's/<h6>/{\\tiny /g' \
+	-e 's/<\/h6>/}/g' \
+	"$songfile" > "$outfile"
+# Add to include list
+	echo "\include{\songs\draft\$outfile" > $listfile
+done
+
